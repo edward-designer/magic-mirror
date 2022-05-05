@@ -1,14 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Tilt from 'react-parallax-tilt';
+import Rank from '../Rank/Rank.component';
 
 import './Logo.styles.scss'; 
 
-const Logo = () => {
+const Logo = ({children}) => {
 
     return (
         <Tilt>
-            <div style={{ height: '300px', width: '300px', backgroundColor: 'transparent' }}>
+            <div style={{ height: '300px', width: '300px', backgroundColor: 'transparent', position: 'relative' }}>
             <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
  width="100%" height="100%" viewBox="0 0 1160.000000 1280.000000"
  preserveAspectRatio="xMidYMid meet">
@@ -514,6 +515,8 @@ c-323 114 -565 213 -844 345 -76 36 -140 66 -141 66 -1 0 -21 -96 -45 -212z"/>
 </g>
 </svg>
             </div>
+            {children}
+            <p className="f3">{`This Magic Brain will tell you your age. Give it a try!`}</p>
         </Tilt>
     )
 } 

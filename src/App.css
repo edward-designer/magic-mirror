@@ -46,3 +46,9 @@
   left:0;
   z-index:-1;
 }
+
+.image-uploaded {
+  max-width: 300px;
+  position: absolute;
+  top:30%;
+}
