@@ -1,15 +1,16 @@
-import React, { useState, createContext } from 'react';
-import './App.css';
+import React, { useState, useReducer } from 'react';
+
 import Navigation from './Components/Navigation/Navigation.component';
 import Logo from './Components/Logo/Logo.component';
 import ImageLinkForm from './Components/ImageLinkForm/ImageLinkForm.component';
 import Rank from './Components/Rank/Rank.component';
 import UploadedImage from './Components/UploadedImage/UploadedImage.component';
+import DropUpload from './Components/DropUpload/DropUpload.component';
 
 import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
 
-
+import './App.css';
 
 const USER_ID = 'gracedward';
 // Your PAT (Personal Access Token) can be found in the portal under Authentification
@@ -22,34 +23,27 @@ const MODEL_VERSION_ID = 'fb9f10339ac14e23b8e960e74984401b';
 function App() {
 
   const [imageUrl, setImageUrl] = useState('https://upload.wikimedia.org/wikipedia/en/4/48/Blank.JPG');
+  const [msg, setMsg] = useState('Mirror, mirror, what is my age?');
 
   const particlesInit = async (main) => {
     await loadFull(main);
   };
 
-  const particlesLoaded = (container) => {
-    console.log(container);
-  };
-
   const onImageChange = async ( event ) => {
     
-    const getBase64 = (file) => {
+    const getBase64 = async (file) => {
         return new Promise((resolve, reject) => {
-          let reader = new FileReader();
-      
+          let reader = new FileReader();     
           reader.onload = () => {
             resolve(reader.result);
-          };
-      
-          reader.onerror = reject;
-      
+          };      
+          reader.onerror = reject;     
           reader.readAsDataURL(file);
         })
       }
     const processFile = async (file) => {
         try {
           let contentBuffer = await getBase64(file);
-          console.log(contentBuffer);
           contentBuffer = contentBuffer.replace(/data:image\/.{3,4};base64,/,'');
           const raw = JSON.stringify({
                 "user_app_id": {
@@ -77,28 +71,57 @@ function App() {
             };
             fetch("https://api.clarifai.com/v2/models/" + MODEL_ID + "/versions/" + MODEL_VERSION_ID + "/outputs", requestOptions)
             .then(response => response.text())
-            .then(result => {document.getElementById("result").innerHTML = "The age is around "+JSON.parse(result).outputs[0].data.concepts[0].name})
+            .then(result => {setMsg("The age is around "+JSON.parse(result).outputs[0].data.concepts[0].name)})
             .catch(error => console.log('error', error));
         } catch(err) {
           console.log(err);
         }
     }
-    processFile(event.target.files[0]);
-    setImageUrl(URL.createObjectURL(event.target.files[0]));  
+    let fileUpload = '';
+    if (event.target){
+      fileUpload = event.target.files[0];
+    } else {
+      fileUpload = event[0];
+    }
+    if(!fileUpload.type.match(/image/)) {
+      setMsg("Sorry, file is not an image. Please try again!");
+      setImageUrl("https://upload.wikimedia.org/wikipedia/en/4/48/Blank.JPG");
+      return;
+    }
+    processFile(fileUpload);
+    setImageUrl(URL.createObjectURL(fileUpload));  
 }
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_DROP_DEPTH':
+      return { ...state, dropDepth: action.dropDepth }
+    case 'SET_IN_DROP_ZONE':
+      return { ...state, inDropZone: action.inDropZone };
+    case 'ADD_FILE_TO_LIST':
+      return { ...state, fileList: state.fileList.concat(action.files) };
+    default:
+      return state;
+  }
+};
+const [data, dispatch] = useReducer(
+  reducer, { dropDepth: 0, inDropZone: false, fileList: [] }
+)
+
+
 
   return (
     <div className="App">
+      <DropUpload data={data} dispatch={dispatch} onImageChange={onImageChange}/>
       <Navigation />
       <Logo>
         <UploadedImage url={imageUrl} />
-        <Rank />
+        <Rank msg={msg}/>
       </Logo>
       <ImageLinkForm onImageChange={onImageChange} />
       <Particles
       id="tsparticles"
       init={particlesInit}
-      loaded={particlesLoaded}
       options={{
         background: {
           color: {
